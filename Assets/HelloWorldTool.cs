@@ -1,16 +1,21 @@
 using UnityEngine;
+using UnityEditor;
 
-public class HelloWorldTool : MonoBehaviour
+public class HelloWorldWindow : EditorWindow
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    [MenuItem("Window/Hello World")]
+    public static void ShowWindow()
     {
-        
+        GetWindow<HelloWorldWindow>("Hello World");
     }
 
-    // Update is called once per frame
-    void Update()
+    void OnGUI()
     {
-        
+        GUILayout.Label("Hello World!", EditorStyles.boldLabel);
+
+        if (GUILayout.Button("Close"))
+        {
+            Close();
+        }
     }
 }
