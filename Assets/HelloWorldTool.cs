@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
@@ -119,7 +120,24 @@ public class RandomStuffWindow : EditorWindow
         GUILayout.EndHorizontal();
         
         GUILayout.Space(10);
-
         
+        GUILayout.Label("Path script stuff");
+        if (GUILayout.Button("Find all objects that have path script"))
+        {
+            // Find all objects with Path script
+            Path[] pathComponents = FindObjectsOfType<Path>();
+    
+            // Create a list to store the found GameObjects
+            List<GameObject> pathObjects = new List<GameObject>();
+    
+            // Get the GameObjects from the components
+            foreach (Path path in pathComponents)
+            {
+                pathObjects.Add(path.gameObject);
+            }
+    
+            // Select all found objects in the hierarchy
+            Selection.objects = pathObjects.ToArray();
+        }
     }
 }
