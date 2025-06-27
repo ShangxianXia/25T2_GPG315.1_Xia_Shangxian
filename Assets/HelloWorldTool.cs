@@ -5,9 +5,20 @@ using UnityEngine.UI;
 
 public class RandomStuffWindow : EditorWindow
 {
+    // this is for random stuff
     private float scaleValue = 1;
-    
     private float rotationValue = 360;
+    
+    // this is for object finder script part
+    private enum SearchMode { Script, Tag, Name }
+    private SearchMode searchMode = SearchMode.Script;
+    private string scriptName = "Path";
+    private string tagName = "Untagged";
+    private string objectName = "";
+    
+    // this is for the tabs up top to switch between each feature
+    private enum WindowTab { Main, Randomiser, ObjectFinder }
+    private WindowTab currentTab = WindowTab.Main;
     
     [MenuItem("Window/RandomStuff")]
     public static void ShowWindow()
@@ -17,13 +28,35 @@ public class RandomStuffWindow : EditorWindow
     
     void OnGUI()
     {
-        // GUILayout.Label("Hello World!", EditorStyles.boldLabel);
+        currentTab = (WindowTab)GUILayout.Toolbar((int)currentTab, System.Enum.GetNames(typeof(WindowTab)));
         
+        switch (currentTab)
+        {
+            case WindowTab.Main:
+                MainTabStuff();
+                break;
+            case WindowTab.ObjectFinder:
+                ObjectFinderStuff();
+                break;
+            case WindowTab.Randomiser:
+                RandomiserStuff();
+                break;
+        }
+    }
+    void MainTabStuff()
+    {
+        GUILayout.Label("Settings", EditorStyles.boldLabel);
+        // Add any settings you want here
+        EditorGUILayout.HelpBox("This is where you would put settings controls.", MessageType.Info);
+    }
+    
+    void RandomiserStuff()
+    {
         if (GUILayout.Button("Close"))
         {
             Close();
         }
-        
+
         GUILayout.Space(10f);
         GUILayout.Label("Reset Stuff", EditorStyles.boldLabel);
         
@@ -119,25 +152,102 @@ public class RandomStuffWindow : EditorWindow
         }
         GUILayout.EndHorizontal();
         
-        GUILayout.Space(10);
-        
-        GUILayout.Label("Path script stuff");
-        if (GUILayout.Button("Find all objects that have path script"))
+        // GUILayout.Space(10);
+        //
+        // GUILayout.Label("Find script stuff");
+        // if (GUILayout.Button("Find all objects that have path script"))
+        // {
+        //     Path[] pathComponents = FindObjectsByType<Path>(FindObjectsSortMode.None);
+        //     
+        //     List<GameObject> pathObjects = new List<GameObject>();
+        //     
+        //     foreach (Path path in pathComponents)
+        //     {
+        //         pathObjects.Add(path.gameObject);
+        //     }
+        //     
+        //     Selection.objects = pathObjects.ToArray();
+        // }
+    }
+
+    void ObjectFinderStuff()
+    {
+        if (GUILayout.Button("Close"))
         {
-            // Find all objects with Path script
-            Path[] pathComponents = FindObjectsOfType<Path>();
-    
-            // Create a list to store the found GameObjects
-            List<GameObject> pathObjects = new List<GameObject>();
-    
-            // Get the GameObjects from the components
-            foreach (Path path in pathComponents)
+            Close();
+        }
+        GUILayout.Space(10f);
+        
+        GUILayout.Label("Object Finder", EditorStyles.boldLabel);
+        
+        searchMode = (SearchMode)EditorGUILayout.EnumPopup("Search by:", searchMode);
+        
+        switch (searchMode)
+        {
+            case SearchMode.Script:
+                scriptName = EditorGUILayout.TextField("Script Name:", scriptName);
+                break;
+                
+            case SearchMode.Tag:
+                tagName = EditorGUILayout.TagField("Tag:", tagName);
+                break;
+                
+            case SearchMode.Name:
+                objectName = EditorGUILayout.TextField("Name Contains:", objectName);
+                break;
+        }
+        
+        if (GUILayout.Button("Find Objects"))
+        {
+            List<GameObject> foundObjects = new List<GameObject>();
+            
+            switch (searchMode)
             {
-                pathObjects.Add(path.gameObject);
+                case SearchMode.Script:
+                    System.Type type = System.Type.GetType(scriptName + ", Assembly-CSharp");
+                    if (type != null)
+                    {
+                        UnityEngine.Object[] components = Resources.FindObjectsOfTypeAll(type);
+                        foreach (UnityEngine.Object component in components)
+                        {
+                            if (component is MonoBehaviour)
+                            {
+                                foundObjects.Add(((MonoBehaviour)component).gameObject);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError("Script not found: " + scriptName);
+                    }
+                    break;
+                    
+                case SearchMode.Tag:
+                    GameObject[] taggedObjects = GameObject.FindGameObjectsWithTag(tagName);
+                    foundObjects.AddRange(taggedObjects);
+                    break;
+                    
+                case SearchMode.Name:
+                    GameObject[] allObjects = GameObject.FindObjectsOfType<GameObject>();
+                    foreach (GameObject obj in allObjects)
+                    {
+                        if (obj.name.Contains(objectName))
+                        {
+                            foundObjects.Add(obj);
+                        }
+                    }
+                    break;
             }
-    
-            // Select all found objects in the hierarchy
-            Selection.objects = pathObjects.ToArray();
+            
+            if (foundObjects.Count > 0)
+            {
+                Selection.objects = foundObjects.ToArray();
+                EditorGUIUtility.PingObject(foundObjects[0]);
+            }
+            else
+            {
+                Debug.Log("No objects found matching the search criteria.");
+            }
         }
     }
 }
