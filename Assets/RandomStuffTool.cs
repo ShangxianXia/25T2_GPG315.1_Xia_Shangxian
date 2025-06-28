@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using System.Linq;
 
 public class RandomStuffTool : EditorWindow
 {
@@ -16,7 +17,7 @@ public class RandomStuffTool : EditorWindow
     private string objectName = "Enter a object name";
     
     // this is for the tabs up top to switch between each feature
-    private enum WindowTab { MainInfo, Randomiser, ObjectFinder }
+    private enum WindowTab { MainInfo, Randomiser, ReferenceFinder }
     private WindowTab currentTab = WindowTab.MainInfo;
     
     [MenuItem("Window/RandomStuffTool")]
@@ -34,7 +35,7 @@ public class RandomStuffTool : EditorWindow
             case WindowTab.MainInfo:
                 MainInfoTabStuff();
                 break;
-            case WindowTab.ObjectFinder:
+            case WindowTab.ReferenceFinder:
                 ObjectFinderStuff();
                 break;
             case WindowTab.Randomiser:
@@ -44,129 +45,189 @@ public class RandomStuffTool : EditorWindow
     }
     void MainInfoTabStuff()
     {
-        GUILayout.Label("Settings", EditorStyles.boldLabel);
-        // Add any settings you want here
-        EditorGUILayout.HelpBox("This is the Random Stuff Tool, to begin select the tabs up top that correspond to the feature!", MessageType.Info);
+        // custom style
+        GUIStyle myOwnStyleForAHeader = new GUIStyle(EditorStyles.boldLabel)
+        {
+            fontSize = 18,
+            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.MiddleCenter,
+            border = new RectOffset(10, 10, 10, 10)
+        };
+        
+        GUILayout.Label("This is the Random Stuff Tool,\n to begin select the tabs up top that correspond to the feature!,\n Orrrrr press the buttons on the bottom :D, either works!", myOwnStyleForAHeader);
+
+        if (GUILayout.Button("Randomiser?", GUILayout.Height(30f)))
+        {
+            currentTab = WindowTab.Randomiser;
+        }
+        if (GUILayout.Button("Reference finder?", GUILayout.Height(30f)))
+        {
+            currentTab = WindowTab.ReferenceFinder;
+        }
     }
     
     void RandomiserStuff()
     {
         if (GUILayout.Button("Close"))
+    {
+        Close();
+    }
+        
+    GUILayout.Space(10f);
+    GUILayout.Label("Reset Stuff", EditorStyles.boldLabel);
+    
+    GUILayout.BeginHorizontal();
+    if (GUILayout.Button("Reset all"))
+    {
+        Undo.RecordObjects(Selection.transforms, "Reset all");
+        foreach (GameObject obj in Selection.gameObjects)
         {
-            Close();
+            obj.transform.position = Vector3.zero;
+            obj.transform.rotation = Quaternion.identity;
+            var renderer = obj.GetComponent<MeshRenderer>();
+            if (renderer != null) renderer.material.color = Color.white;
+            obj.transform.localScale = Vector3.one;
         }
+    }
 
-        GUILayout.Space(10f);
-        GUILayout.Label("Reset Stuff", EditorStyles.boldLabel);
-        
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Reset all"))
+    if (GUILayout.Button("Reset position"))
+    {
+        Undo.RecordObjects(Selection.transforms, "Reset position");
+        foreach (GameObject obj in Selection.gameObjects)
         {
-            Selection.activeTransform.transform.position = Vector3.zero;
-            Selection.activeTransform.transform.rotation = Quaternion.identity;
-            Selection.activeGameObject.GetComponent<MeshRenderer>().material.color = Color.white;
-            Selection.activeTransform.transform.localScale = Vector3.one;
+            obj.transform.position = Vector3.zero;
+            obj.transform.rotation = Quaternion.identity;
         }
+    }
+    
+    if (GUILayout.Button("Reset scale"))
+    {
+        Undo.RecordObjects(Selection.transforms, "Reset scale");
+        foreach (GameObject obj in Selection.gameObjects)
+        {
+            obj.transform.localScale = Vector3.one;
+        }
+    }
 
-        if (GUILayout.Button("Reset position"))
+    if (GUILayout.Button("Reset colour"))
+    {
+        Undo.RecordObjects(Selection.gameObjects.SelectMany(o => o.GetComponents<MeshRenderer>()).ToArray(), "Reset color");
+        foreach (GameObject obj in Selection.gameObjects)
         {
-            Selection.activeTransform.transform.position = Vector3.zero;
-            Selection.activeTransform.transform.rotation = Quaternion.identity;
+            var renderer = obj.GetComponent<MeshRenderer>();
+            if (renderer != null) renderer.material.color = Color.white;
         }
-        
-        if (GUILayout.Button("Reset scale"))
+    }
+    GUILayout.EndHorizontal();
+    
+    
+    GUILayout.Space(10);
+    
+    
+    GUILayout.Label($"Randomise Rotation Stuff by > {rotationValue} < degrees", EditorStyles.boldLabel);
+    rotationValue = GUILayout.HorizontalSlider(rotationValue, 0, 360f);
+    GUILayout.Space(15);
+    GUILayout.BeginHorizontal();
+    if (GUILayout.RepeatButton("X Axis"))        
+    {
+        Undo.RecordObjects(Selection.transforms, "Random X Rotation");
+        foreach (GameObject obj in Selection.gameObjects)
         {
-            Selection.activeTransform.transform.localScale = Vector3.one;
+            obj.transform.Rotate(Vector3.right, Random.Range(0f, rotationValue));
         }
-
-        if (GUILayout.Button("Reset colour"))
+    }
+    
+    if (GUILayout.RepeatButton("Y Axis"))
+    {
+        Undo.RecordObjects(Selection.transforms, "Random Y Rotation");
+        foreach (GameObject obj in Selection.gameObjects)
         {
-            Selection.activeGameObject.GetComponent<MeshRenderer>().material.color = Color.white;
+            obj.transform.Rotate(Vector3.up, Random.Range(0f, rotationValue));
         }
-        GUILayout.EndHorizontal();
-        
-        
-        GUILayout.Space(10);
-        GUILayout.Label($"Randomise Rotation Stuff by > {rotationValue} < degrees", EditorStyles.boldLabel);
-        rotationValue = GUILayout.HorizontalSlider(rotationValue, 0, 360f);
-        GUILayout.Space(15);
-        GUILayout.BeginHorizontal();
-        if (GUILayout.RepeatButton("X Axis"))        
+    }
+    
+    if (GUILayout.RepeatButton("Z Axis"))
+    {
+        Undo.RecordObjects(Selection.transforms, "Random Z Rotation");
+        foreach (GameObject obj in Selection.gameObjects)
         {
-            // (1, 0, 0)
-            Selection.activeTransform.Rotate(Vector3.right, Random.Range(0f, 360f));
+            obj.transform.Rotate(Vector3.forward, Random.Range(0f, rotationValue));
         }
-        
-        if (GUILayout.RepeatButton("Y Axis"))
+    }
+    
+    if (GUILayout.RepeatButton("All Axis"))
+    {
+        Undo.RecordObjects(Selection.transforms, "Random All Rotation");
+        foreach (GameObject obj in Selection.gameObjects)
         {
-            // (0, 1, 0)
-            Selection.activeTransform.Rotate(Vector3.up, Random.Range(0f, 360f));
+            obj.transform.Rotate(new Vector3(Random.Range(0f, rotationValue), Random.Range(0f, rotationValue), Random.Range(0f, rotationValue)));
         }
-        
-        if (GUILayout.RepeatButton("Z Axis"))
+    }
+    GUILayout.EndHorizontal();
+    
+    GUILayout.Space(10);
+    
+    
+    GUILayout.Label($"Randomise Scale Stuff by > {scaleValue} <", EditorStyles.boldLabel);
+    scaleValue = GUILayout.HorizontalSlider(scaleValue, 1, 100);
+    GUILayout.Space(15f);
+    GUILayout.BeginHorizontal();
+    if (GUILayout.RepeatButton("X Scale"))
+    {
+        Undo.RecordObjects(Selection.transforms, "Random X Scale");
+        foreach (GameObject obj in Selection.gameObjects)
         {
-            // (0, 0, 1)
-            Selection.activeTransform.Rotate(Vector3.forward, Random.Range(0f, 360f));
+            Vector3 currentScale = obj.transform.localScale;
+            obj.transform.localScale = new Vector3(Random.Range(0, scaleValue), currentScale.y, currentScale.z);
         }
-        
-        if (GUILayout.RepeatButton("All Axis"))
+    }
+    
+    if (GUILayout.RepeatButton("Y Scale"))
+    {
+        Undo.RecordObjects(Selection.transforms, "Random Y Scale");
+        foreach (GameObject obj in Selection.gameObjects)
         {
-            // (1, 1, 1)
-            Selection.activeTransform.Rotate(Vector3.one, Random.Range(0f, 360f));
+            Vector3 currentScale = obj.transform.localScale;
+            obj.transform.localScale = new Vector3(currentScale.x, Random.Range(0, scaleValue), currentScale.z);
         }
-        GUILayout.EndHorizontal();
-        
-        GUILayout.Space(10);
-        GUILayout.Label($"Randomise Scale Stuff by > {scaleValue} <", EditorStyles.boldLabel);
-        scaleValue = GUILayout.HorizontalSlider(scaleValue, 1, 100);
-        GUILayout.Space(15f);
-        GUILayout.BeginHorizontal();
-        if (GUILayout.RepeatButton("X Scale"))
+    }
+    
+    if (GUILayout.RepeatButton("Z Scale"))
+    {
+        Undo.RecordObjects(Selection.transforms, "Random Z Scale");
+        foreach (GameObject obj in Selection.gameObjects)
         {
-            Selection.activeTransform.localScale = new Vector3(Random.Range(0, scaleValue), 0, 0);
+            Vector3 currentScale = obj.transform.localScale;
+            obj.transform.localScale = new Vector3(currentScale.x, currentScale.y, Random.Range(0, scaleValue));
         }
-        
-        if (GUILayout.RepeatButton("Y Scale"))
+    }
+    
+    if (GUILayout.RepeatButton("All Size/Scale"))
+    {
+        Undo.RecordObjects(Selection.transforms, "Random All Scale");
+        foreach (GameObject obj in Selection.gameObjects)
         {
-            Selection.activeTransform.localScale = new Vector3(0, Random.Range(0, scaleValue), 0);
+            obj.transform.localScale = new Vector3(Random.Range(0, scaleValue), Random.Range(0, scaleValue), Random.Range(0, scaleValue));
         }
+    }
+    GUILayout.EndHorizontal();
+    
+    GUILayout.Space(10);
+    
+    
+    GUILayout.Label("Colour Stuff", EditorStyles.boldLabel);
+    GUILayout.BeginHorizontal();
+    if (GUILayout.RepeatButton("Randomise Colour"))
+    {
+        var renderers = Selection.gameObjects.SelectMany(o => o.GetComponents<MeshRenderer>()).ToArray();
         
-        if (GUILayout.RepeatButton("Z Scale"))
+        Undo.RecordObjects(renderers, "Random Color");
+        foreach (MeshRenderer renderer in renderers)
         {
-            Selection.activeTransform.localScale = new Vector3(0, 0, Random.Range(0, scaleValue));
+            renderer.material.color = new Color(Random.Range(0f, 1f),Random.Range(0f, 1f),Random.Range(0f, 1f));
         }
-        
-        if (GUILayout.RepeatButton("All Size/Scale"))
-        {
-            Selection.activeTransform.localScale = new Vector3(Random.Range(0, scaleValue), Random.Range(0, scaleValue), Random.Range(0, scaleValue));
-        }
-        GUILayout.EndHorizontal();
-        
-        GUILayout.Space(10);
-        GUILayout.Label("Colour Stuff", EditorStyles.boldLabel);
-        GUILayout.BeginHorizontal();
-        if (GUILayout.RepeatButton("Randomise Colour"))
-        {
-            Selection.activeGameObject.GetComponent<MeshRenderer>().material.color = new Color(Random.Range(0, 10f), Random.Range(0, 10f), Random.Range(0, 10f));
-        }
-        GUILayout.EndHorizontal();
-        
-        // GUILayout.Space(10);
-        //
-        // GUILayout.Label("Find script stuff");
-        // if (GUILayout.Button("Find all objects that have path script"))
-        // {
-        //     Path[] pathComponents = FindObjectsByType<Path>(FindObjectsSortMode.None);
-        //     
-        //     List<GameObject> pathObjects = new List<GameObject>();
-        //     
-        //     foreach (Path path in pathComponents)
-        //     {
-        //         pathObjects.Add(path.gameObject);
-        //     }
-        //     
-        //     Selection.objects = pathObjects.ToArray();
-        // }
+    }
+    GUILayout.EndHorizontal();
     }
 
     void ObjectFinderStuff()
