@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using UnityEngine.UI;
 
-public class RandomStuffWindow : EditorWindow
+public class RandomStuffTool : EditorWindow
 {
     // this is for random stuff
     private float scaleValue = 1;
@@ -12,18 +11,18 @@ public class RandomStuffWindow : EditorWindow
     // this is for object finder script part
     private enum SearchMode { Script, Tag, Name }
     private SearchMode searchMode = SearchMode.Script;
-    private string scriptName = "Path";
+    private string scriptName = "Enter a script name";
     private string tagName = "Untagged";
-    private string objectName = "";
+    private string objectName = "Enter a object name";
     
     // this is for the tabs up top to switch between each feature
-    private enum WindowTab { Main, Randomiser, ObjectFinder }
-    private WindowTab currentTab = WindowTab.Main;
+    private enum WindowTab { MainInfo, Randomiser, ObjectFinder }
+    private WindowTab currentTab = WindowTab.MainInfo;
     
-    [MenuItem("Window/RandomStuff")]
+    [MenuItem("Window/RandomStuffTool")]
     public static void ShowWindow()
     {
-        GetWindow<RandomStuffWindow>("Random stuff");
+        GetWindow<RandomStuffTool>("Random stuff tool");
     }
     
     void OnGUI()
@@ -32,8 +31,8 @@ public class RandomStuffWindow : EditorWindow
         
         switch (currentTab)
         {
-            case WindowTab.Main:
-                MainTabStuff();
+            case WindowTab.MainInfo:
+                MainInfoTabStuff();
                 break;
             case WindowTab.ObjectFinder:
                 ObjectFinderStuff();
@@ -43,11 +42,11 @@ public class RandomStuffWindow : EditorWindow
                 break;
         }
     }
-    void MainTabStuff()
+    void MainInfoTabStuff()
     {
         GUILayout.Label("Settings", EditorStyles.boldLabel);
         // Add any settings you want here
-        EditorGUILayout.HelpBox("This is where you would put settings controls.", MessageType.Info);
+        EditorGUILayout.HelpBox("This is the Random Stuff Tool, to begin select the tabs up top that correspond to the feature!", MessageType.Info);
     }
     
     void RandomiserStuff()
@@ -207,8 +206,8 @@ public class RandomStuffWindow : EditorWindow
                     System.Type type = System.Type.GetType(scriptName + ", Assembly-CSharp");
                     if (type != null)
                     {
-                        UnityEngine.Object[] components = Resources.FindObjectsOfTypeAll(type);
-                        foreach (UnityEngine.Object component in components)
+                        Object[] components = Resources.FindObjectsOfTypeAll(type);
+                        foreach (Object component in components)
                         {
                             if (component is MonoBehaviour)
                             {
@@ -228,7 +227,7 @@ public class RandomStuffWindow : EditorWindow
                     break;
                     
                 case SearchMode.Name:
-                    GameObject[] allObjects = GameObject.FindObjectsOfType<GameObject>();
+                    GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
                     foreach (GameObject obj in allObjects)
                     {
                         if (obj.name.Contains(objectName))
