@@ -96,6 +96,14 @@ public class RandomStuffTool : EditorWindow
             foreach (GameObject obj in Selection.gameObjects)
             {
                 obj.transform.position = Vector3.zero;
+            }
+        }
+        
+        if (GUILayout.Button("Reset rotation"))
+        {
+            Undo.RecordObjects(Selection.transforms, "Reset rotation");
+            foreach (GameObject obj in Selection.gameObjects)
+            {
                 obj.transform.rotation = Quaternion.identity;
             }
         }
